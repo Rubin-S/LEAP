@@ -1,4 +1,5 @@
 import os
+import warnings
 from pathlib import Path
 from decouple import config, Csv
 from django.core.management.utils import get_random_secret_key
@@ -9,11 +10,31 @@ from django.core.management.utils import get_random_secret_key
 BASE_DIR = Path(__file__).resolve().parent.parent
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
+
+def int_config(name, default):
+    value = config(name, default=default)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        warnings.warn(f"Invalid integer value for {name}; using default {default}.")
+        return default
+
+
+def bool_config(name, default):
+    value = config(name, default=default)
+    if isinstance(value, bool):
+        return value
+    try:
+        return config(name, default=default, cast=bool)
+    except (TypeError, ValueError):
+        warnings.warn(f"Invalid boolean value for {name}; using default {default}.")
+        return default
+
 # -------------------------
 # SECURITY SETTINGS
 # -------------------------
 SECRET_KEY = config('DJANGO_SECRET_KEY', default=get_random_secret_key())
-DEBUG = True
+DEBUG = bool_config('DJANGO_DEBUG', True)
 ALLOWED_HOSTS = config(
     'DJANGO_ALLOWED_HOSTS',
     default='127.0.0.1,localhost',
@@ -107,7 +128,7 @@ DATABASES = {
         'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default=5432, cast=int),
+        'PORT': int_config('DB_PORT', 5432),
     }
 }
 
@@ -143,20 +164,20 @@ USE_TZ = True
 # STATIC & MEDIA FILES
 # -------------------------
 STATIC_URL = '/static/'
-STATIC_ROOT = "/home/myadmin/LEAP/staticfiles"
+STATIC_ROOT = config('DJANGO_STATIC_ROOT', default=str(BASE_DIR / 'staticfiles'))
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = "/home/myadmin/LEAP/media"
+MEDIA_ROOT = config('DJANGO_MEDIA_ROOT', default=str(BASE_DIR / 'media'))
 
 # -------------------------
 # EMAIL CONFIGURATION
 # -------------------------
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='')
-EMAIL_PORT = config('EMAIL_PORT', cast=int, default=587)
+EMAIL_PORT = int_config('EMAIL_PORT', 587)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_TLS = bool_config('EMAIL_USE_TLS', True)
 
 # -------------------------
 # SECURITY HEADERS (For HTTPS)
@@ -222,6 +243,6 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Can be 'mandatory' if you want email 
 SOCIALACCOUNT_AUTO_SIGNUP = True          # Automatically create users on first login
 SOCIALACCOUNT_QUERY_EMAIL = True          # Make sure email is fetched from provider
 SOCIALACCOUNT_ADAPTER = 'website.adapter.MySocialAccountAdapter'
-SECURE_SSL_REDIRECT = config('DJANGO_SECURE_SSL_REDIRECT', default=False, cast=bool)
-SESSION_COOKIE_SECURE = config('DJANGO_SESSION_COOKIE_SECURE', default=False, cast=bool)
-CSRF_COOKIE_SECURE = config('DJANGO_CSRF_COOKIE_SECURE', default=False, cast=bool)
+SECURE_SSL_REDIRECT = bool_config('DJANGO_SECURE_SSL_REDIRECT', False)
+SESSION_COOKIE_SECURE = bool_config('DJANGO_SESSION_COOKIE_SECURE', False)
+CSRF_COOKIE_SECURE = bool_config('DJANGO_CSRF_COOKIE_SECURE', False)
