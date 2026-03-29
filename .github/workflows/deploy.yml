@@ -37,7 +37,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -T 20 -H -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/known_hosts <<'EOF'
+          69.62.80.229 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMM1CgdD9kpk0GYVBdJDrRmQ9TUGaxBUZuQ3zjL74thx
+          69.62.80.229 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCQ5HxUKP1Xc+qZeOaoZdYRaeAE7o1kyyXRB/9F1bmKuqMERbVVT/VsqbNR9AzBah3Wff1djVTczUt2+OrdptPVk+MDhSjVos17UMFEyP7u0RiBeKswPqk+gLN56+jcJICREzcVQiV/dXni9yE4hWLOzaxdFbc0C8IEzrwkUWFf/Z0QNfUTNR2bZwHzR0xce1SeeWgaJvhEVu7OvSeQNsKT2oXkX/C+eIHbM86diabroUSKaMs/7RE5uPq3ojjCvwsjM6563mZ6Hp12plgvHCEPsOSeVoPtefHcNcjui2vJEXxq8VM/FNw7Wg6C0iy9gaLtEgsItn+pXrszXkmqYkM4ApQcuN8jvb6+TFfh2HXTGIc2zeYRBSoyaAgcfdt4WxL1sSo0+XS10on+2fO3d8YUaKbosUHwUms1T/e65riwgn4oCw/3TQyDDXMxxpwS1Vjd6Nxzj/CW9P4ZjfmAAsHB8cuKcF6eeU1/22+kKqlVg/5N00QTnPCotjxJwCVxVZs=
+          69.62.80.229 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBCoDLcKch7lcqnS1XfR7tc+BinEG+7MDhIu3JHL4kDAys1oHwUUrM9seHatzUbJozu78imFOUwkh7AEUPnJCjyA=
+          EOF
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Sync app to server
         run: |
