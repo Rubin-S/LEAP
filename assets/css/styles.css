@@ -1,0 +1,72 @@
+.containers{
+    margin-left: auto;
+    margin-right:auto;
+    width: 95vw;
+    flex-wrap: inherit;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navy{
+        margin-left: auto;
+        margin-right: auto;
+        width: 95vw;
+        display: flex;
+        flex-wrap: inherit;
+        align-items: center;
+        justify-content: space-between;
+}
+
+.about{
+        margin-left: auto;
+            margin-right: auto;
+            width: 95vw;
+            flex-wrap: inherit;
+            align-items: center;
+}
+
+    
+        .border-top-custom {
+            border-top: 3px solid #000;
+            /* Example HBS Crimson color */
+        }
+    
+        .distinctive-section {
+            padding: 3rem 1rem;
+        }
+    
+        .highlight-title {
+            color: #000;
+            /* Accent color for headings */
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+    
+        .highlight-desc {
+            font-size: 0.95rem;
+            color: #555;
+        }
+    
+        .right-column-text {
+            margin-bottom: 1rem;
+        }
+
+
+                        .vertical-line {
+                            border-left: 2px solid #a51c30;
+                            /* Crimson line */
+                            padding-left: 1rem;
+                            /* Spacing between line and text */
+                        }
+            
+                        .section-title {
+                            font-weight: 700;
+                            /* Bold heading */
+                            margin-bottom: 0.5rem;
+                        }
+            
+                        .section-text {
+                            margin-bottom: 0;
+                            color: #333;
+                            /* Adjust text color as needed */
+                        }

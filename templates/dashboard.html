@@ -1,0 +1,897 @@
+{% extends 'base.html' %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block title %}Dashboard{% endblock %}
+{% load static %}
+{% block content %}
+{% load socialaccount %}
+
+<style>
+  /* Base Styles */
+  body { 
+    min-height: 100vh; 
+    display: flex; 
+    flex-direction: row; 
+    background:#f5f5f5; 
+    position: relative;
+  }
+
+  /* --- Sidebar --- */
+  .sidebar { 
+    min-width:220px; 
+    max-width:220px; 
+    background:#1e1e2f; 
+    color:white; 
+    display:flex; 
+    flex-direction:column; 
+    justify-content:space-between; 
+    padding:1rem 0; 
+    z-index:1100;
+    transition: transform 0.3s ease-in-out;
+  }
+  .sidebar .nav-link { color:#cfd8dc; padding:0.75rem 1.5rem; font-weight:500; cursor:pointer; }
+  .sidebar .nav-link.active { background:#37474f; color:#fff; }
+  .sidebar .nav-link:hover { background:#455a64; color:white; }
+  
+  /* Submenu is now controlled by JS */
+  .submenu { display:none; flex-direction:column; background:#2b2b3f; }
+  .submenu.open { display: flex; } /* NEW class to show submenu */
+  .submenu .sub-link { padding:0.5rem 2rem; color:#b0bec5; cursor:pointer; }
+  .submenu .sub-link:hover { background:#455a64; color:white; }
+  
+  /* --- Main Content --- */
+  .content { 
+    flex-grow:1; 
+    padding:2rem; 
+    position:relative; 
+    z-index:1; 
+    max-width: calc(100% - 220px); 
+  }
+
+  /* --- Mobile Header --- */
+  .mobile-header {
+    display: none;
+    background: #1e1e2f;
+    color: white;
+    padding: 0.75rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+  }
+  #hamburger-btn {
+    background: none; border: none; color: white; font-size: 1.5rem;
+  }
+  .mobile-header .header-title {
+    font-size: 1.2rem; font-weight: bold;
+  }
+  
+  /* Overlay */
+  #overlay {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 1099;
+  }
+
+  /* --- Other component styles --- */
+  .btn-teal { background:#00bfae; color:#fff; border-radius:20px; }
+  .btn-teal:hover { background:#00d8c0; }
+  .choice-item { margin-bottom:8px; display:flex; align-items:center; }
+  .choice-item input { margin-right:10px; }
+  .palette button { width:35px; height:35px; border-radius:50%; font-size:0.8rem; }
+  #scoreOverlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; 
+}
+
+#scoreBox {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 700px;
+  width: 90%;
+  
+}
+
+#scoreBox h3 {
+  margin-bottom: 1rem;
+  /
+}
+  .result-table { width:100%; border-collapse:collapse; margin-top:1rem; }
+  .result-table th, .result-table td { padding:10px 8px; border-bottom:1px solid #eee; text-align:left; font-size:0.95rem; }
+  .result-table thead th { text-transform:uppercase; font-size:0.75rem; color:#666; letter-spacing:0.6px; }
+  #profileDialog { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:3000; }
+  #profileBox { background:white; padding:2rem; border-radius:12px; max-width:400px; width:90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  #profileBox h3 { margin-bottom:1rem; color:#333; }
+  #profileBox .form-group { margin-bottom:1rem; }
+  #profileBox label { display:block; margin-bottom:0.5rem; font-weight:500; color:#555; }
+  #profileBox input, #profileBox select { width:100%; padding:0.75rem; border:2px solid #ddd; border-radius:6px; font-size:1rem; transition:border-color 0.3s; }
+  #profileBox select:focus { outline:none; border-color:#00bfae; box-shadow:0 0 0 3px rgba(0,191,174,0.1); }
+  #profileBox .btn-primary { background:#00bfae; border:none; padding:0.75rem 1.5rem; border-radius:6px; color:white; font-weight:500; cursor:pointer; width:100%; font-size:1rem; }
+  #profileBox .btn-primary:hover { background:#00d8c0; }
+  .file-vertical-scroll { max-height: calc(3 * 40px + 24px); overflow-y: auto; padding-right: 4px; }
+  .file-vertical-scroll::-webkit-scrollbar { width: 0px; background: transparent; }
+  .file-vertical-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+  .header-img { height: 2em; width: auto; }
+  .history-card { background: #fff; border-radius: 10px; padding: 12px; box-shadow: 0 6px 18px rgba(10,10,20,0.06); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+  .history-meta { display:flex; gap:12px; align-items:center; }
+  .badge-mode { padding:6px 10px; border-radius:8px; font-weight:600; font-size:0.85rem; color:#fff; }
+  .mode-bullet { background:#00bfae; } .mode-blitz { background:#ff7043; } .mode-survival { background:#9c27b0; } .mode-subwise { background:#42a5f5; } .mode-mock { background:#7c4dff; }
+  .score-pill { background:linear-gradient(90deg,#1de9b6,#00bfae); color:#002; padding:8px 12px; border-radius:999px; font-weight:700; }
+
+  /* --- Announcement Styles --- */
+  .announcement-box{ max-height:260px; overflow:hidden; border-radius:16px; background:linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,250,250,0.98)); box-shadow:0 6px 18px rgba(22,24,26,0.06); padding:0.35rem; position:relative; }
+  .announcement-box:hover{ overflow-y:auto; }
+  .announcement-box::-webkit-scrollbar{width:4px;}
+  .announcement-box::-webkit-scrollbar-track{background:transparent;}
+  .announcement-box::-webkit-scrollbar-thumb{ background:rgba(0,0,0,0.18); border-radius:10px; min-height:20px; }
+  .announcement-box{scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.18) transparent;}
+  .announcement-list{ display:flex; flex-direction:column; position:relative; }
+  .announcement-row{ display:flex; gap:12px; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-radius:10px; background:transparent; color:#111827; text-decoration:none; border-bottom:1px solid rgba(0,0,0,0.04); transition:background 0.6s ease,color 0.6s ease,box-shadow 0.6s ease, transform 1.5s ease-in-out; }
+  .announcement-row:hover{ background:rgba(10,58,202,0.12); color:var(--bs-primary); cursor:pointer; }
+  .ann-text{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:calc(100% - 64px); font-size:0.96rem; }
+  .new-badge{ background:linear-gradient(135deg,#ff3366,#ff6a00); color:#fff; font-size:0.66rem; font-weight:700; padding:0.22rem 0.5rem; border-radius:999px; box-shadow:0 6px 18px rgba(255,51,102,0.12); }
+  .announcement-row:last-child{border-bottom:none;}
+  @keyframes curvedBlueWipe { 0% { clip-path: circle(0% at 50% 50%); background: rgba(10,58,202,0.0);} 50% { clip-path: circle(75% at 50% 50%); background: rgba(10,58,202,0.0.7);} 100% { clip-path: circle(150% at 50% 50%); background: rgba(10,58,202,0.0);} }
+
+  /* --- Responsive Styles --- */
+  @media (max-width: 800px) {
+    body { flex-direction:column; }
+    .sidebar { position: fixed; height: 100vh; top: 0; left: 0; transform: translateX(-100%); }
+    .sidebar.show { transform: translateX(0); }
+    .mobile-header { display: flex; }
+    .content { padding:1rem; max-width: 100%; }
+    #playArea .row { flex-direction: column; }
+    #playArea .col-md-8, #playArea .col-md-4 { width: 100%; max-width: 100%; flex: 0 0 100%; }
+  }
+</style>
+
+<div class="mobile-header">
+    <span class="header-title">LeapNITPY</span>
+    <button id="hamburger-btn">☰</button>
+</div>
+<div id="overlay"></div>
+
+<div class="sidebar d-flex flex-column">
+  <div>
+    <div class="d-flex align-items-center mb-4 px-3">
+      <br>
+      <img src="{% static 'img/firess.png' %}" alt="dashboard" class="me-3 mb-1 header-img" />
+      <a href="https://leapnitpy.org/" style="text-decoration:none; color: rgba(255, 255, 255, 0.95);"><h4 class="fw-bold mb-0">LeapNITPY</h4></a>
+    </div>
+    <nav class="nav flex-column">
+      <a class="nav-link" onclick="showTab('homeTab')">Dashboard</a>
+      <a class="nav-link play">Play ▸</a>
+      <div class="submenu">
+        <a class="sub-link" style="text-decoration: none;" onclick="startMode('bullet')">🎮Bullet</a>
+        <a class="sub-link" style="text-decoration: none;" onclick="startMode('blitz')">⚡Blitz</a>
+        <a class="sub-link" style="text-decoration: none;" onclick="startMode('survival')">☠️Survival</a>
+        <a class="sub-link" style="text-decoration: none;" onclick="startMode('subwise')">🔰Subwise</a>
+      </div>
+      <a class="nav-link" onclick="showTab('mockTab')">Mock</a>
+      <a class="nav-link" onclick="showTab('learnContent')">Learn</a>
+      <a class="nav-link" onclick="showTab('history')">History</a>
+      <a class="nav-link" onclick="showTab('league')">League</a>
+      <a class="nav-link" onclick="showProfileDialog()"> Edit Profile</a>
+    </nav>
+  </div>
+  <div class="bottom-actions px-2">
+    <style>
+      /* --- Styles for Cool Bottom Buttons --- */
+      .bottom-actions {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 1rem;
+      }
+      
+      .dark-mode-toggle {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+        color: #cfd8dc;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .dark-mode-toggle input {
+        display: none;
+      }
+      .dark-mode-toggle label {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+        background-color: #455a64;
+        border-radius: 99px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-right: 10px;
+      }
+      .dark-mode-toggle label::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: white;
+        top: 3px;
+        left: 3px;
+        transition: transform 0.3s;
+      }
+      .dark-mode-toggle .sun-icon, .dark-mode-toggle .moon-icon {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.8rem;
+        pointer-events: none;
+      }
+      .dark-mode-toggle .sun-icon { left: 6px; opacity: 1; transition: opacity 0.3s; }
+      .dark-mode-toggle .moon-icon { right: 6px; opacity: 0; transition: opacity 0.3s; }
+  
+      /* Toggle Switch 'On' State */
+      .dark-mode-toggle input:checked + label {
+        background-color: #00bfae;
+      }
+      .dark-mode-toggle input:checked + label::after {
+        transform: translateX(22px);
+      }
+      .dark-mode-toggle input:checked + label .sun-icon { opacity: 0; }
+      .dark-mode-toggle input:checked + label .moon-icon { opacity: 1; }
+  
+      /* Cool Logout Button */
+      .logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background-color: #374151; /* Dark gray background */
+  color: #e5e7eb; /* Off-white text */
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.logout-btn:hover {
+  color: white;
+  background-color: #4b5563; /* Slightly lighter gray on hover */
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.02); /* Pop effect */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); /* Subtle glow */
+}
+    </style>
+  
+    <div class="dark-mode-toggle mb-2">
+      <input type="checkbox" id="darkModeToggle" />
+      <label for="darkModeToggle">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+      </label>
+      <span>Dark Mode</span>
+    </div>
+  <br>
+    <a href="{% url 'logout' %}" class="logout-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+      <span class=" fw-bold ">Logout</span>
+    </a>
+  
+    <script>
+      // This script finds the checkbox above and adds the toggle functionality.
+      document.getElementById("darkModeToggle").addEventListener('change', () => { 
+        document.body.classList.toggle("bg-dark"); 
+        document.body.classList.toggle("text-light"); 
+      });
+    </script>
+  </div>
+</div>
+
+<div class="content">
+  <div id="homeTab" class="tab-content" style="display:block;">
+    <h3 class="mb-4">Welcome, {{ request.user.first_name|default:'User' }}!</h3>
+    <div class="row">
+      <div class="col-md-6">
+        <h5 class="mb-3 text-primary fw-bold ps-2">Quick Actions</h5>
+        <div class="card">
+          <div class="card-body">
+            <p>Select an option from the sidebar to get started.</p>
+            <button class="btn btn-primary" onclick="startMode('blitz')">Start Blitz Mode</button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        {% if announcements %}
+        <br>
+        <h5 class="mb-3 text-primary fw-bold ps-2">Announcements</h5>
+        <div class="announcement-box" id="announcement-box" aria-label="Announcements">
+          <div class="announcement-list" id="announcement-list">
+            {% for ann in announcements %}
+              {% if ann.pdf %}
+                <a href="{{ ann.pdf.url }}" target="_blank" class="announcement-row" title="{{ ann.text }}">
+                  <span class="ann-text" title="{{ ann.text }}">{{ ann.text }}</span>
+                  {% if ann.is_new %}
+                    <span class="badge new-badge">NEW</span>
+                  {% endif %}
+                </a>
+              {% else %}
+                <div class="announcement-row" title="{{ ann.text }}">
+                  <span class="ann-text" title="{{ ann.text }}">{{ ann.text }}</span>
+                  {% if ann.is_new %}
+                    <span class="badge new-badge">NEW</span>
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+          <div class="card"><div class="card-body"><p>No new announcements.</p></div></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div id="playArea" class="tab-content" style="display:none;">
+    {% if questions %}
+      {{ questions|json_script:"questions-data" }}
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card shadow-sm p-4 bg-white border rounded">
+            <h5 id="questionNumber"></h5>
+            <h6 id="conceptName" class="text-muted"></h6>
+            <p id="questionText"></p>
+            <!-- Normal inline image -->
+<img id="questionImg"
+src=""
+alt=""
+style="max-width:100%; max-height:250px; display:none; margin-bottom:10px; border-radius:8px; object-fit:contain; cursor:zoom-in;">
+
+<!-- Overlay viewer -->
+<div id="imgOverlay"
+style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center; overflow:hidden;">
+<div id="overlayWrapper" 
+  style="touch-action:none; cursor:grab; transform-origin:0 0;">
+<img id="overlayImg"
+    src=""
+    alt=""
+    style="max-width:90vw; max-height:90vh; border-radius:8px; object-fit:contain; user-select:none; pointer-events:none;">
+</div>
+</div>
+
+<script>
+const thumb = document.getElementById('questionImg');
+const overlay = document.getElementById('imgOverlay');
+const wrapper = document.getElementById('overlayWrapper');
+const overlayImg = document.getElementById('overlayImg');
+
+let scale=1, lastScale=1, posX=0, posY=0, lastX=0, lastY=0, startX=0, startY=0, isDragging=false;
+
+// Open overlay
+thumb.addEventListener("click", () => {
+overlay.style.display = "flex";
+overlayImg.src = thumb.src;
+resetTransform();
+});
+
+// Close overlay on bg click
+overlay.addEventListener("click", e => {
+if (e.target === overlay) overlay.style.display = "none";
+});
+
+// Reset transform
+function resetTransform() {
+scale=1; posX=0; posY=0; lastX=0; lastY=0;
+updateTransform();
+}
+
+// Apply transform
+function updateTransform() {
+wrapper.style.transform = `translate(${posX}px,${posY}px) scale(${scale})`;
+}
+
+// Zoom with wheel
+wrapper.addEventListener("wheel", e => {
+e.preventDefault();
+const delta = e.deltaY > 0 ? -0.1 : 0.1;
+scale = Math.min(Math.max(0.5, scale + delta), 5);
+updateTransform();
+});
+
+// Drag pan
+wrapper.addEventListener("mousedown", e => {
+isDragging=true;
+startX=e.clientX-lastX;
+startY=e.clientY-lastY;
+wrapper.style.cursor="grabbing";
+});
+window.addEventListener("mousemove", e => {
+if (!isDragging) return;
+posX=e.clientX-startX;
+posY=e.clientY-startY;
+lastX=posX; lastY=posY;
+updateTransform();
+});
+window.addEventListener("mouseup", ()=>{isDragging=false; wrapper.style.cursor="grab";});
+
+// Touch support (pan + pinch zoom)
+let initDist=0;
+wrapper.addEventListener("touchstart", e => {
+if (e.touches.length===2){
+initDist = Math.hypot(
+ e.touches[0].clientX-e.touches[1].clientX,
+ e.touches[0].clientY-e.touches[1].clientY
+);
+lastScale=scale;
+} else if (e.touches.length===1){
+startX=e.touches[0].clientX-lastX;
+startY=e.touches[0].clientY-lastY;
+}
+},{passive:false});
+
+wrapper.addEventListener("touchmove", e => {
+if (e.touches.length===2){
+e.preventDefault();
+const curDist=Math.hypot(
+ e.touches[0].clientX-e.touches[1].clientX,
+ e.touches[0].clientY-e.touches[1].clientY
+);
+scale=Math.min(Math.max(0.5,lastScale*(curDist/initDist)),5);
+} else if (e.touches.length===1){
+posX=e.touches[0].clientX-startX;
+posY=e.touches[0].clientY-startY;
+lastX=posX; lastY=posY;
+}
+updateTransform();
+},{passive:false});
+</script>
+
+            <div id="choicesContainer" class="mb-3"></div>
+            <div class="mt-3 d-flex flex-wrap gap-2" id="actionBtns">
+              <button id="saveNext" class="btn btn-success btn-sm flex-fill">Save & Next</button>
+              <button id="clearBtn" class="btn btn-warning btn-sm flex-fill">Clear</button>
+              <button id="saveReview" class="btn btn-info btn-sm flex-fill">Save & Review</button>
+              <button id="reviewNext" class="btn btn-primary btn-sm flex-fill">Review & Next</button>
+            </div>
+            <div class="mt-3 d-flex justify-content-between" id="navBtns">
+              <button id="prevBtn" class="btn btn-secondary btn-sm">&lt;&lt; Back</button>
+              <button id="nextBtn" class="btn btn-secondary btn-sm">Next &gt;&gt;</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card p-3 shadow-sm">
+            <h6 class="fw-bold">Timer: <span id="timer">--:--</span></h6>
+            <div class="palette d-flex flex-wrap gap-2 my-3" id="palette"></div>
+            <div class="mt-3 small">
+              <p><span class="badge bg-secondary" id="notVisitedCount">0</span> Not Visited</p>
+              <p><span class="badge bg-danger" id="notAnsweredCount">0</span> Not Answered</p>
+              <p><span class="badge bg-success" id="answeredCount">0</span> Answered</p>
+              <p><span class="badge bg-warning text-dark" id="reviewCount">0</span> Marked Review</p>
+            </div>
+            <button id="endTest" class="btn btn-danger w-100 mt-3">Submit Test</button>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <p>No questions available.</p>
+    {% endif %}
+  </div>
+
+  <div id="mockTab" class="tab-content" style="display:none;">
+    <h3>Available Mock Tests</h3>
+    <p id="currentServerTime" style="font-size:0.9rem; color:#555;">Current time: --</p>
+    <div class="row">
+      {% if mocktests %}
+        {% for mock in mocktests %}
+          <div class="col-md-4 mb-3">
+            <div class="card shadow-sm h-100">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ mock.name }}</h5>
+                <p class="text-muted mb-1">Scheduled: {{ mock.open_datetime|date:"d M Y, H:i" }}</p>
+                <p class="card-text flex-grow-1">{{ mock.description|default:"No description." }}</p>
+                <a href="javascript:void(0);" class="btn btn-primary mt-2 start-mock-btn" data-id="{{ mock.id }}" data-open="{{ mock.open_datetime|date:'Y-m-d H:i:s' }}">Start</a>
+                <p class="mt-1 mock-msg" style="color:red; font-size:0.85rem;"></p>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>No mock tests scheduled.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div id="subwiseCards" class="tab-content" style="display:none;">
+    <h3>Select Concept</h3>
+    <div class="row">
+      {% regroup questions by concept_name as concept_list %}
+      {% for concept in concept_list %}
+        <div class="col-md-3 mb-3">
+          <div class="card shadow-sm p-3 text-center" onclick="startSubwise('{{ concept.grouper }}')">
+            <h6>{{ concept.grouper }}</h6>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div id="learnContent" class="tab-content p-4" style="display:none;">
+    <div class="container" style="max-width:1200px;">
+      <div class="row">
+        {% if study_materials %}
+          {% for concept in study_materials %}
+            <div class="col-12 col-sm-6 col-md-4 mb-4">
+              <div class="card h-100 shadow-sm" style="background: rgba(30, 30, 40, 0.9); color: #fff; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); padding:16px; display:flex; flex-direction:column;">
+                <h5 style="font-family: 'Poppins', sans-serif; font-weight:600; margin-bottom:8px;">{{ concept.concept_name }}</h5>
+                {% if concept.description %}<p style="flex-grow:1; color:#ddd;">{{ concept.description }}</p>{% endif %}
+                {% if concept.files.all %}
+                  <div class="file-vertical-scroll mt-3">
+                    <ul class="list-unstyled m-0 p-0">
+                      {% for file in concept.files.all %}
+                        <li style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                          <span class="filename" style="flex:1; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:8px;">{{ file.file.name }}</span>
+                          <a href="{{ file.file.url }}" target="_blank" style="flex-shrink:0; background:linear-gradient(135deg,#0099ff,#00ffdd); color:white; padding:6px 14px; border-radius:8px; font-size:0.85rem; text-decoration:none;">View</a>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% else %}
+                  <p style="color:#aaa; font-size:0.85rem;">No files uploaded yet.</p>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p style="color:#ccc;">No study materials available.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div id="history" class="tab-content" style="display:none; padding:12px;">
+    <h3>Your Test History</h3>
+    <div id="historyList" class="scrollable-history" style="margin-top:12px;"></div>
+  </div>
+  <style>
+    .scrollable-history { max-height: 400px; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: #ccc transparent; -webkit-overflow-scrolling: touch; }
+    .scrollable-history::-webkit-scrollbar { width: 8px; }
+    .scrollable-history::-webkit-scrollbar-track { background: transparent; }
+    .scrollable-history::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 6px; }
+    .scrollable-history::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.4); }
+  </style>
+  
+  <div id="league" class="tab-content" style="display:none;">
+    <h3>League Standings</h3>
+    <div class="d-flex flex-column gap-2 mt-3">
+      {% if mocktests %}
+        {% for mock in mocktests %}
+          <div class="card shadow-sm p-3 mb-3">
+            <div class="d-flex justify-content-between mb-2">
+              <div class="fw-bold">{{ mock.name }}</div>
+              <div class="text-muted">{{ mock.open_datetime|date:"d M Y, H:i" }}</div>
+            </div>
+            {% if mock.results %}
+              <div class="table-responsive">
+                <table class="table table-striped table-bordered mb-0">
+                  <thead><tr><th>Username</th><th>Score</th><th>Total</th><th>Percent</th><th>Correct</th><th>Wrong</th><th>Unanswered</th><th>Time (s)</th></tr></thead>
+                  <tbody>
+                    {% for result in mock.results %}
+                      <tr><td>{{ result.username }}</td><td>{{ result.score }}</td><td>{{ result.total_score }}</td><td>{{ result.percentage }}%</td><td>{{ result.correct }}</td><td>{{ result.wrong }}</td><td>{{ result.unanswered }}</td><td>{{ result.time_taken }}</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-muted">No submissions yet.</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>No mock tests available yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+<div id="scoreOverlay">
+  <div id="scoreBox">
+    <h3>Test Finished</h3>
+    <p id="scoreDetails" style="font-weight:600; color:#333;"></p>
+    <table class="result-table" id="recentResultTable" style="margin-top:10px;">
+      <thead><tr><th>Date</th><th>Test</th><th>Mode</th><th>Correct</th><th>Wrong</th><th>Score</th></tr></thead>
+      <tbody id="recentResultBody"></tbody>
+    </table>
+    <div style="display:flex; gap:8px; margin-top:14px; justify-content:center;">
+      <button class="btn btn-primary mt-3" onclick="closeScore()">Close</button>
+      <button class="btn btn-outline-success mt-3" onclick="viewHistory()">View History</button>
+    </div>
+  </div>
+</div>
+<div id="profileDialog">
+  <div id="profileBox">
+    <h3>Complete Your Profile</h3>
+    <p style="color:#666; margin-bottom:1.5rem;">Please provide your details to continue.</p>
+    <form id="profileForm">
+      {% csrf_token %}
+      <div class="form-group"><label for="firstName">First Name:</label><input type="text" id="firstName" name="first_name" value="{{ request.user.first_name }}" required></div>
+      <div class="form-group">
+        <label for="course">Course:</label>
+        <select id="course" name="last_name" required>
+          <option value="">Select Course</option>
+          <option value="JEE" {% if request.user.last_name == "JEE" %}selected{% endif %}>JEE</option>
+          <option value="NEET" {% if request.user.last_name == "NEET" %}selected{% endif %}>NEET</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Save & Continue</button>
+    </form>
+  </div>
+</div>
+
+<script>
+/* -----------------------------------------
+   Globals & helpers
+   ----------------------------------------- */
+let allQuestions = JSON.parse(document.getElementById('questions-data')?.textContent || '[]');
+let mode="", questions=[], current=0, status=[], answers=[], score=0, timerInterval, timeLeft=0;
+
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+
+/* -----------------------------------------
+   Initialization & Event Listeners
+   ----------------------------------------- */
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('overlay');
+    const playLink = document.querySelector('.sidebar .nav-link.play');
+    const submenu = document.querySelector('.sidebar .submenu');
+
+    function closeMenu() {
+        sidebar.classList.remove('show');
+        overlay.style.display = 'none';
+    }
+    hamburgerBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('show');
+        overlay.style.display = sidebar.classList.contains('show') ? 'block' : 'none';
+    });
+    overlay.addEventListener('click', closeMenu);
+
+    // Close menu when a main nav link or sub-link is clicked
+    document.querySelectorAll('.sidebar .nav-link, .sidebar .sub-link').forEach(link => {
+        if (!link.classList.contains('play')) { // Don't close for the "Play" dropdown itself
+            link.addEventListener('click', () => { setTimeout(closeMenu, 150); });
+        }
+    });
+
+    // **FIX: Toggle "Play" submenu on click instead of hover**
+    playLink.addEventListener('click', function(event) {
+        event.preventDefault();
+        submenu.classList.toggle('open');
+    });
+
+    // Initializations for other features
+    checkProfileComplete();
+    initializeFilenameTrimming();
+    initializeMockTestButtons();
+    initializeHistoryLink();
+});
+
+/* -----------------------------------------
+   Profile & User Data
+   ----------------------------------------- */
+function showProfileDialog() { document.getElementById('profileDialog').style.display = 'flex'; }
+function hideProfileDialog() { document.getElementById('profileDialog').style.display = 'none'; }
+function checkProfileComplete() {
+  const firstName = '{{ request.user.first_name }}';
+  const course = '{{ request.user.last_name }}';
+  if (!firstName.trim() || !course.trim() || (course !== 'JEE' && course !== 'NEET')) {
+    showProfileDialog();
+    return false;
+  }
+  return true;
+}
+document.getElementById('profileForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  fetch('{% url "update_profile" %}', { method: 'POST', body: new FormData(this), headers:{ 'X-Requested-With':'XMLHttpRequest'} })
+    .then(res=>res.json()).then(data=>{ if(data.success){ hideProfileDialog(); location.reload(); } else alert(data.message || 'Error.'); })
+    .catch(()=>alert('Network error.'));
+});
+
+/* -----------------------------------------
+   Tab and Test Flow
+   ----------------------------------------- */
+function showTab(id){
+  if (!checkProfileComplete()) return;
+  document.querySelectorAll('.tab-content').forEach(x => x.style.display="none");
+  const tab = document.getElementById(id);
+  if(tab) tab.style.display="block";
+}
+
+function startMode(m){
+  if (!checkProfileComplete()) return;
+  mode=m; score=0; current=0;
+  if(m==="bullet"){ questions=[...allQuestions].sort(()=>Math.random()-0.5); timeLeft=60; }
+  else if(m==="blitz"){ questions=[...allQuestions].sort(()=>Math.random()-0.5); timeLeft=180; }
+  else if(m==="survival"){ questions=[...allQuestions].sort(()=>Math.random()-0.5); timeLeft=0; }
+  else if(m==="subwise"){ showTab('subwiseCards'); return; }
+  status=Array(questions.length).fill("notVisited");
+  answers=Array(questions.length).fill(null);
+  showTab('playArea'); showQuestion(0); setupTimer();
+}
+let currentMockName = ""; 
+function startMock(mockId, mockName){
+  if (!checkProfileComplete()) return;
+  fetch(`/mocktest/${mockId}/`)
+    .then(res => res.json())
+    .then(data => {
+      if(data.status === "not_available"){ alert(data.message + "\nServer time: " + data.current_server_time); return; }
+      mode = "mock"; currentMockName = mockName;
+      questions = data.questions.map(q => q.question_type === "NUM" ? { ...q } : { ...q, choices_list: q.choices_list || [] });
+      timeLeft = data.duration || 10800; score = 0; current = 0;
+      status = Array(questions.length).fill("notVisited");
+      answers = Array(questions.length).fill(null);
+      showTab('playArea'); showQuestion(0); setupTimer();
+    });
+}
+function startSubwise(concept){
+  if (!checkProfileComplete()) return;
+  questions = allQuestions.filter(q=>q.concept_name===concept);
+  status=Array(questions.length).fill("notVisited");
+  answers=Array(questions.length).fill(null);
+  mode="subwise"; timeLeft=0;
+  showTab('playArea'); showQuestion(0); setupTimer();
+}
+
+function setupTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(mode==="survival"||mode==="subwise"){ timeLeft++; }
+    else { if(timeLeft>0) timeLeft--; else endTest(); }
+    let m=Math.floor(timeLeft/60), s=timeLeft%60;
+    document.getElementById("timer").textContent=`${m}:${s<10?"0":""}${s}`;
+  },1000);
+}
+
+function showQuestion(i){
+  current=i; const q=questions[i];
+  document.getElementById("questionNumber").textContent=`Q ${i+1}/${questions.length}`;
+  document.getElementById("conceptName").textContent=q.concept_name||"";
+  document.getElementById("questionText").textContent=q.question_text;
+  let img=document.getElementById("questionImg");
+  if(q.image){ img.src=q.image; img.style.display="block"; } else img.style.display="none";
+  let c=document.getElementById("choicesContainer"); c.innerHTML="";
+  if(q.question_type==="NUM"){
+    c.innerHTML=`<input type="number" id="userAnswer" class="form-control">`;
+    if(answers[i] != null) document.getElementById("userAnswer").value=answers[i];
+  } else {
+    (q.choices_list || []).forEach(ch=>{
+      let div=document.createElement("div"); div.className="choice-item";
+      let r=document.createElement("input"); r.type="radio"; r.name="userAnswer"; r.value=ch;
+      if(answers[i]===ch) r.checked=true;
+      let l=document.createElement("label"); l.textContent=ch;
+      div.appendChild(r); div.appendChild(l); c.appendChild(div);
+    });
+  }
+  updatePalette();
+}
+
+function getAnswer(){ const q=questions[current]; if(q.question_type==="NUM") return document.getElementById("userAnswer").value||null; let sel=document.querySelector("input[name='userAnswer']:checked"); return sel?sel.value:null; }
+function saveAnswer(){ let ans=getAnswer(); answers[current]=ans; if(ans!==null && ans!=="" ){ status[current] = "answered"; } else status[current]="notAnswered"; }
+function updatePalette(){ let p=document.getElementById("palette"); p.innerHTML=""; status.forEach((st,i)=>{ let b=document.createElement("button"); b.textContent=i+1; b.className="btn btn-sm"; b.classList.add(st==="answered"?"btn-success":st==="notAnswered"?"btn-danger":st==="review"?"btn-warning":"btn-secondary"); b.onclick=()=>showQuestion(i); p.appendChild(b); }); document.getElementById("notVisitedCount").textContent=status.filter(x=>x==="notVisited").length; document.getElementById("notAnsweredCount").textContent=status.filter(x=>x==="notAnswered").length; document.getElementById("answeredCount").textContent=status.filter(x=>x==="answered").length; document.getElementById("reviewCount").textContent=status.filter(x=>x==="review").length; }
+
+document.getElementById("saveNext")?.addEventListener("click",()=>{ saveAnswer(); if(current<questions.length-1) showQuestion(current+1); });
+document.getElementById("clearBtn")?.addEventListener("click",()=>{ answers[current]=null; status[current]="notAnswered"; showQuestion(current); });
+document.getElementById("saveReview")?.addEventListener("click",()=>{ answers[current]=getAnswer(); status[current]="review"; if(current<questions.length-1) showQuestion(current+1); });
+document.getElementById("reviewNext")?.addEventListener("click",()=>{ status[current]="review"; if(current<questions.length-1) showQuestion(current+1); });
+document.getElementById("prevBtn")?.addEventListener("click",()=>{ if(current>0) showQuestion(current-1); });
+document.getElementById("nextBtn")?.addEventListener("click",()=>{ if(current<questions.length-1) showQuestion(current+1); });
+document.getElementById("endTest")?.addEventListener("click",endTest);
+
+function computeResults() {
+  let correct=0, wrong=0, unanswered=0, totalPossible=questions.length*4, finalScore=0;
+  questions.forEach((q,i)=>{
+    let ans = answers[i];
+    if(ans==null || ans==="" ) { unanswered++; return; }
+    let ok = (q.question_type==="NUM") ? (parseInt(ans) === Number(q.correct_integer)) : (ans === q.correct_choice);
+    if(ok){ correct++; finalScore += 4; } else { wrong++; finalScore -= 1; }
+  });
+  if(finalScore < 0) finalScore = 0; 
+  return { correct, wrong, unanswered, totalPossible, finalScore };
+}
+
+function endTest(){
+  clearInterval(timerInterval);
+  const res = computeResults();
+  document.getElementById("scoreDetails").textContent = `Correct: ${res.correct}, Wrong: ${res.wrong}, Score: ${res.finalScore}/${res.totalPossible}`;
+  const tbody = document.getElementById('recentResultBody'); tbody.innerHTML = '';
+  const tr = document.createElement('tr');
+  const shortDate = (new Date()).toLocaleString([], { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+  tr.innerHTML = `<td>${shortDate}</td><td>${escapeHtml((mode==="mock")? currentMockName : mode)}</td><td>${escapeHtml(mode)}</td><td>${res.correct}</td><td>${res.wrong}</td><td>${res.finalScore}</td>`;
+  tbody.appendChild(tr);
+  document.getElementById("scoreOverlay").style.display="flex";
+  const payload = { test_name: (mode==="mock")?currentMockName:mode, mode:mode, score:res.finalScore, total_possible_score:res.totalPossible, correct_answers:res.correct, wrong_answers:res.wrong, unanswered:res.unanswered, time_taken:timeLeft };
+  postResult(payload);
+}
+function closeScore(){ document.getElementById("scoreOverlay").style.display="none"; showTab('homeTab'); }
+function viewHistory(){ closeScore(); showTab('history'); loadHistory(); }
+
+/* -----------------------------------------
+   API & Data Handling
+   ----------------------------------------- */
+function postResult(payload) {
+  fetch("/save-message/", { method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie('csrftoken') }, body: JSON.stringify(payload) })
+  .then(res => res.json()).then(data => { if (!data.success) console.error("Save failed:", data.message); }).catch(err => console.error("Network error:", err));
+}
+function loadHistory() {
+  fetch("/get-messages/", { method: "GET", headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie('csrftoken') } })
+  .then(res => res.json())
+  .then(data => {
+    if (!data.success) { console.error("History fetch failed:", data.message); return; }
+    const container = document.getElementById("historyList"); container.innerHTML = "";
+    data.results.forEach(r => {
+      const card = document.createElement("div"); card.className = "history-card";
+      card.innerHTML = `<div><b>${r.test_name}</b> — ${r.mode}</div><div>Score: ${r.score}/${r.total_possible_score}</div><div>${r.correct_answers} ✓ | ${r.wrong_answers} ✗ | ${r.unanswered} ?</div><div>${new Date(r.taken_at).toLocaleString()}</div>`;
+      container.appendChild(card);
+    });
+  }).catch(err => console.error("History fetch error:", err));
+}
+
+/* -----------------------------------------
+   Utilities & Minor UX
+   ----------------------------------------- */
+function escapeHtml(unsafe) { if(unsafe==null) return ""; return String(unsafe).replace(/[&<>"'`=\/]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'})[s]); }
+document.getElementById("darkModeBtn").onclick=()=>{ document.body.classList.toggle("bg-dark"); document.body.classList.toggle("text-light"); };
+function initializeFilenameTrimming(){ document.querySelectorAll('#learnContent .filename').forEach(span => { let name = span.textContent.split("/").pop(); let dotIndex = name.lastIndexOf("."); if(dotIndex > 10) name=name.substring(0,10)+"..."+name.substring(dotIndex); span.textContent = name; }); }
+function updateServerTime() { const timeElem = document.getElementById('currentServerTime'); if(timeElem) timeElem.textContent = "Server time: " + new Date().toLocaleString(); }
+setInterval(updateServerTime, 1000); updateServerTime();
+function initializeHistoryLink(){ document.querySelectorAll('.nav-link').forEach(a=>{ if(a.textContent.trim()==='History'){ a.addEventListener('click', loadHistory); } }); }
+function initializeMockTestButtons(){ document.querySelectorAll(".start-mock-btn").forEach(btn => { const mockId = btn.dataset.id; const mockName = btn.closest('.card-body').querySelector('.card-title').textContent; const openTime = new Date(btn.dataset.open.replace(" ", "T") + "+05:30"); const msg = btn.parentElement.querySelector(".mock-msg"); const checkEnable = () => { if(new Date() >= openTime) { btn.classList.remove("disabled"); btn.onclick = () => startMock(mockId, mockName); msg.textContent = ""; } else { btn.classList.add("disabled"); btn.onclick = e => { e.preventDefault(); msg.textContent = "Available at " + openTime.toLocaleString(); }; } }; checkEnable(); setInterval(checkEnable, 5000); }); }
+
+/* -----------------------------------------
+   Announcement Scroller Script
+   ----------------------------------------- */
+(function(){
+  const box = document.getElementById('announcement-box');
+  const list = document.getElementById('announcement-list');
+  if(!box || !list || list.children.length === 0) return;
+
+  box.addEventListener('mouseenter',()=>box.style.overflowY='auto');
+  box.addEventListener('mouseleave',()=>box.style.overflowY='hidden');
+  const rows = Array.from(list.children);
+  const rowHeight = rows[0].offsetHeight;
+  const visibleRows = Math.floor(box.clientHeight / rowHeight);
+  
+  if(rows.length <= visibleRows) return;
+
+  let index = 0;
+  function scrollStep(){
+    index++;
+    if(index > rows.length - visibleRows){
+      list.style.transition = 'transform 0.6s ease';
+      list.style.transform = `translateY(0px)`;
+      list.style.animation = 'curvedBlueWipe 1.8s ease';
+      setTimeout(()=>{ list.style.animation = ''; index = 0; setTimeout(scrollStep, 2300); },1800);
+      return;
+    }
+    list.style.transition = 'transform 1.5s ease-in-out';
+    list.style.transform = `translateY(-${rowHeight * index}px)`;
+    setTimeout(scrollStep, 2300);
+  }
+  setTimeout(scrollStep, 2300);
+})();
+</script>
+{% endblock %}

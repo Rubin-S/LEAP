@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<section class="py-5 mt-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <h1 class="text-center mt-3 mb-4">Hi, {{ username }}!</h1>
+
+                <ul class="nav nav-tabs justify-content-center mb-4" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="available-tests-tab" data-bs-toggle="tab" data-bs-target="#available-tests-pane" type="button" role="tab">
+                            Available Tests
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="your-submissions-tab" data-bs-toggle="tab" data-bs-target="#your-submissions-pane" type="button" role="tab">
+                            Your Submissions
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="myTabContent">
+                    <div class="tab-pane fade show active" id="available-tests-pane" role="tabpanel">
+                        {% for test in testlist %}
+                            {% include "_test_item.html" with test=test %}
+                        {% empty %}
+                            <p class="text-center text-muted mt-4">No tests are available at this time.</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="tab-pane fade" id="your-submissions-pane" role="tabpanel">
+                        {% for test in submittedtest %}
+                            {% include "_test_item.html" with test=test %}
+                        {% empty %}
+                             <p class="text-center text-muted mt-4">You have not submitted any tests yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

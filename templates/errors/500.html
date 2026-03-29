@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Page Not Found (404)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; text-align:center; padding:40px; color:#333; }
+    .card { max-width:700px; margin:40px auto; padding:30px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+    a { color:#007bff; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>500 — server error</h1>
+    <p>We couldn't load the page you're looking for: <strong>{{ request_path }}</strong></p>
+    <p><a href="{% url 'home' %}">Go back to home</a></p>
+  </div>
+</body>
+</html>

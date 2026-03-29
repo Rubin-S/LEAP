@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}LEAP Online Test{% endblock %}
+
+{% block content %}
+<div class="modal fade" id="instructionsModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="instructionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="instructionsModalLabel">Instructions</h1>
+            </div>
+            <div class="modal-body">
+                <ul>
+                    <li>Do NOT exit fullscreen mode; otherwise, the test will be submitted.</li>
+                    <li>Do NOT switch browser tabs; otherwise, the test will be submitted.</li>
+                </ul>
+                <button class="btn btn-outline-success w-100" id="startTestBtn">Click Here to Start Test</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="py-4 mt-5">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-12 col-lg-7">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="fs-4">LEAP Online Test</h2>
+                    <div class="d-flex align-items-center fs-5">
+                        <strong class="me-2">Time Left:</strong>
+                        <span id="timer" class="fw-bold text-danger">00:00:00</span>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <p id="question-text" class="lead">Select a question to begin.</p>
+                        <img class="img-fluid rounded mt-2" src="" id="question-file" style="display: none;" alt="Question Image">
+                    </div>
+                </div>
+                
+                <p id="current-question-id" class="d-none"></p>
+
+                <div class="mt-4">
+                    <div id="answerOptions"></div>
+                    <div id="answerNumerical" class="d-none mt-2">
+                        <input type="text" class="form-control" placeholder="Enter your numerical answer" id="numericalAnswerInput" inputmode="decimal">
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4 gap-2">
+                    <button class="btn btn-primary flex-grow-1" type="button" id="saveBtn">Save Answer</button>
+                    <button class="btn btn-secondary flex-grow-1" type="button" id="clearBtn">Clear Selection</button>
+                    <button class="btn btn-danger flex-grow-1" type="button" id="submitBtn" data-submit-url="{% url 'submit_test' test_id=test.test_id %}">Submit Test</button>
+                </div>
+            </div>
+
+            <div class="col-md-12 col-lg-4" id="question-pane">
+                <h3 class="mt-4 mt-lg-0 text-center">Question Palette</h3>
+                <hr>
+                <div id="question-buttons" class="d-flex flex-wrap gap-2"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{ test|json_script:"test-data" }}
+{# json_script produces a <script id="test-data" type="application/json"> ... </script> #}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- STATE AND ELEMENTS ---
+    const testData = JSON.parse(document.getElementById('test-data').textContent);
+    const instructionsModalEl = document.getElementById('instructionsModal');
+    const instructionsModal = new bootstrap.Modal(instructionsModalEl);
+    const answers = {};
+    let testSubmitted = false;
+
+    // DOM Elements
+    const elements = {
+        timer: document.getElementById('timer'),
+        questionText: document.getElementById('question-text'),
+        questionFile: document.getElementById('question-file'),
+        currentQuestionId: document.getElementById('current-question-id'),
+        answerOptions: document.getElementById('answerOptions'),
+        answerNumerical: document.getElementById('answerNumerical'),
+        numericalInput: document.getElementById('numericalAnswerInput'),
+        questionButtonsContainer: document.getElementById('question-buttons'),
+        saveBtn: document.getElementById('saveBtn'),
+        clearBtn: document.getElementById('clearBtn'),
+        submitBtn: document.getElementById('submitBtn'),
+        startTestBtn: document.getElementById('startTestBtn'),
+    };
+
+    // --- FUNCTIONS ---
+    function populateQuestionPalette() {
+        elements.questionButtonsContainer.innerHTML = '';
+        Object.keys(testData.questions).forEach((key, index) => {
+            const button = document.createElement('button');
+            button.className = 'btn btn-outline-secondary';
+            button.textContent = index + 1;
+            button.dataset.questionId = key;
+            button.id = `q-btn-${key}`;
+            button.type = 'button';
+            button.addEventListener('click', () => displayQuestion(key));
+            elements.questionButtonsContainer.appendChild(button);
+        });
+    }
+
+    function displayQuestion(questionId) {
+        const question = testData.questions[questionId];
+        if (!question) return;
+
+        elements.questionText.textContent = question.question || 'No question text.';
+        elements.currentQuestionId.textContent = questionId;
+
+        elements.questionFile.src = "";
+        elements.questionFile.style.display = 'none';
+        if (question.question_file) {
+            elements.questionFile.src = question.question_file;
+            elements.questionFile.style.display = 'block';
+        }
+        
+        document.querySelectorAll('#question-buttons .btn').forEach(btn => btn.classList.remove('btn-primary', 'btn-success'));
+        const btnEl = document.getElementById(`q-btn-${questionId}`);
+        if (btnEl) btnEl.classList.add('btn-primary');
+
+        if (question.type === "option") {
+            elements.answerOptions.innerHTML = `
+                <div class="form-check"><input class="form-check-input" type="radio" name="option" id="optA" value="A"><label class="form-check-label" for="optA">${question.a || ''}</label></div>
+                <div class="form-check"><input class="form-check-input" type="radio" name="option" id="optB" value="B"><label class="form-check-label" for="optB">${question.b || ''}</label></div>
+                <div class="form-check"><input class="form-check-input" type="radio" name="option" id="optC" value="C"><label class="form-check-label" for="optC">${question.c || ''}</label></div>
+                <div class="form-check"><input class="form-check-input" type="radio" name="option" id="optD" value="D"><label class="form-check-label" for="optD">${question.d || ''}</label></div>
+            `;
+            elements.answerOptions.classList.remove('d-none');
+            elements.answerNumerical.classList.add('d-none');
+            
+            if (answers[questionId]) {
+                const radioToSelect = document.querySelector(`input[name="option"][value="${answers[questionId]}"]`);
+                if (radioToSelect) radioToSelect.checked = true;
+            }
+        } else { // numerical
+            elements.answerOptions.classList.add('d-none');
+            elements.answerNumerical.classList.remove('d-none');
+            elements.numericalInput.value = answers[questionId] || "";
+        }
+    }
+
+    function saveAnswer() {
+        const questionId = elements.currentQuestionId.textContent;
+        if (!questionId) return;
+
+        const question = testData.questions[questionId];
+        if (!question) return;
+
+        if (question.type === "option") {
+            const selectedOption = document.querySelector('input[name="option"]:checked');
+            if (selectedOption) {
+                answers[questionId] = selectedOption.value;
+            } else {
+                // no selection -> treat as unattempted (do not set)
+                delete answers[questionId];
+            }
+        } else {
+            const val = elements.numericalInput.value.trim();
+            if (val !== "") answers[questionId] = val;
+            else delete answers[questionId];
+        }
+
+        const btn = document.getElementById(`q-btn-${questionId}`);
+        if (btn) {
+            btn.classList.remove('btn-primary');
+            if (answers.hasOwnProperty(questionId)) btn.classList.add('btn-success');
+            else btn.classList.remove('btn-success');
+        }
+    }
+
+    function clearAnswer() {
+        const questionId = elements.currentQuestionId.textContent;
+        if (!questionId) return;
+
+        const question = testData.questions[questionId];
+        if (!question) return;
+
+        if (question.type === "option") {
+            const selectedOption = document.querySelector('input[name="option"]:checked');
+            if (selectedOption) selectedOption.checked = false;
+        } else {
+            elements.numericalInput.value = "";
+        }
+        delete answers[questionId];
+
+        const btn = document.getElementById(`q-btn-${questionId}`);
+        if (btn) { btn.classList.remove('btn-success'); btn.classList.add('btn-outline-secondary'); }
+    }
+
+    function startTimer() {
+        let seconds = parseInt(testData.time, 10) || 0;
+        elements.timer.textContent = new Date(seconds * 1000).toISOString().substr(11, 8);
+        const timerInterval = setInterval(() => {
+            if (seconds <= 0 || testSubmitted) {
+                clearInterval(timerInterval);
+                if (!testSubmitted) submitTest();
+                return;
+            }
+            seconds--;
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            elements.timer.textContent = `${h}:${m}:${s}`;
+        }, 1000);
+    }
+    
+    function submitTest() {
+        if (testSubmitted) return;
+        testSubmitted = true;
+        
+        window.onbeforeunload = null;
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+        const url = elements.submitBtn.dataset.submitUrl;
+        const csrftoken = getCookie('csrftoken');
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify(answers)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            window.location.href = "{% url 'profile' %}";
+        })
+        .catch(error => {
+            console.error('Error submitting test:', error);
+            alert('There was an error submitting your test. Please contact support.');
+            window.location.href = "{% url 'profile' %}";
+        });
+    }
+    
+    function enterFullscreen() {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.warn('Fullscreen error:', err);
+            });
+        }
+    }
+
+    function handleVisibilityChange() {
+        if (document.hidden) {
+            submitTest();
+        }
+    }
+
+    // --- INITIALIZATION ---
+    instructionsModal.show();
+    populateQuestionPalette();
+
+    elements.startTestBtn.addEventListener('click', () => {
+        instructionsModal.hide();
+        enterFullscreen();
+        startTimer();
+        
+        window.onbeforeunload = () => "Are you sure you want to leave? Your test will be submitted.";
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        const firstQuestionId = Object.keys(testData.questions)[0];
+        if (firstQuestionId) displayQuestion(firstQuestionId);
+    });
+    
+    elements.saveBtn.addEventListener('click', saveAnswer);
+    elements.clearBtn.addEventListener('click', clearAnswer);
+    elements.submitBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to submit the test?')) submitTest();
+    });
+});
+</script>
+{% endblock %}

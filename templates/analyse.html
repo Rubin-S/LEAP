@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Analysis{% endblock %}
+
+{% block content %}
+<section class="py-5 mt-5">
+    <div class="container">
+        <h1 class="text-center mb-2">Test Analysis</h1>
+        <h3 class="text-center mb-4">Total Score: <span class="text-primary">{{ total }}</span></h3>
+
+        {% if qna %}
+            <div class="row g-4">
+                {% for item in qna %}
+                    <div class="col-12 col-lg-6">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <p class="mb-2"><strong>Question:</strong></p>
+                                <p class="mb-3">{{ item.question }}</p>
+
+                                {% if item.question_file %}
+                                    <div class="mb-3">
+                                        <img src="{{ item.question_file }}" alt="Question Media" class="img-fluid rounded" style="max-height: 400px; width:100%; object-fit:contain;">
+                                    </div>
+                                {% endif %}
+
+                                <p class="mb-1"><strong>Status:</strong> {{ item.status|default:"-" }}</p>
+                                <p class="mb-1"><strong>Marks:</strong> {{ item.marks|default:0 }}</p>
+                                <p class="mb-1"><strong>Your Answer:</strong> {{ item.your_answer|default:"-" }}</p>
+                                <p class="mb-1"><strong>Correct Answer:</strong> {{ item.correct_ans|default:"-" }}</p>
+
+                                {% if item.explanation_file %}
+                                    <div class="mt-3">
+                                        <img src="{{ item.explanation_file }}" alt="Explanation Media" class="img-fluid rounded" style="max-height: 400px; width:100%; object-fit:contain;">
+                                    </div>
+                                {% endif %}
+
+                                {% if item.explanation_text %}
+                                    <div class="mt-3">
+                                        <p class="mb-0">{{ item.explanation_text }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-center text-muted">No analysis data available.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

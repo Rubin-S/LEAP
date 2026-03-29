@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Study Material{% endblock %}
+
+{% block metadata %}
+<meta name="description" content="Find the best notes and create your own tests for JEE and NEET.">
+<meta name="keywords" content="LEAP Exam, NEET, JEE, Competitive Exam, NIT Puducherry, Entrance Exam, Mentoring Program">
+<meta name="author" content="LEAP Team">
+<meta property="og:title" content="LEAP Study Materials">
+<meta property="og:description" content="Top Notch Study materials and mentoring for NEET and JEE aspirants by NIT Puducherry students.">
+<meta property="og:image" content="{% static 'img/leap-preview.jpg' %}">
+<meta property="og:url" content="https://www.leapnitpy.in">
+{% endblock %}
+
+{% block content %}
+<section class="py-5 mt-5">
+    <div class="container-fluid">
+        <h1 class="text-center display-4 fw-bold mb-5">Study Material</h1>
+
+        {% if entire_dict %}
+            {# Use precomputed subject_list from view for tabs #}
+            <ul class="nav nav-tabs mb-4 justify-content-center" id="subjectTab" role="tablist">
+                {% for subject_name in subject_list %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if forloop.first %}active{% endif %}" 
+                                id="tab-{{ subject_name|slugify }}-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#tab-{{ subject_name|slugify }}" 
+                                type="button" role="tab" 
+                                aria-controls="tab-{{ subject_name|slugify }}" 
+                                aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                            {{ subject_name }}
+                        </button>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <div class="tab-content">
+                {% for subject_name in subject_list %}
+                    <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                         id="tab-{{ subject_name|slugify }}" role="tabpanel" 
+                         aria-labelledby="tab-{{ subject_name|slugify }}-tab">
+                        <div class="row">
+                            {% for course_name, course_content in entire_dict.items %}
+                                {% if course_content.subject_name %}
+                                    {% for chapter_name, chapter_data in course_content.subject_name.items %}
+                                        <div class="col-lg-4 col-md-6 mb-4 d-flex align-items-stretch">
+                                            <div class="card shadow-sm h-100 w-100">
+                                                <div class="card-body d-flex flex-column justify-content-between">
+                                                    <h5 class="card-title">{{ chapter_name }}</h5>
+
+                                                    <div class="mt-3">
+                                                        <a href="{% url 'create_test' chapter_id=chapter_data.key %}" 
+                                                           class="btn btn-outline-primary mb-2 w-100">Create Test</a>
+
+                                                        {% if chapter_data.materials %}
+                                                            {% for material in chapter_data.materials %}
+                                                                {% if material.type == "pdf" %}
+                                                                    <a class="btn btn-success mb-2 w-100" 
+                                                                       href="{{ material.url }}" download>Download PDF</a>
+                                                                {% else %}
+                                                                    <a class="btn btn-info mb-2 w-100" 
+                                                                       href="{% url 'yt_render' video_id=material.url %}">Watch Lecture</a>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        {% else %}
+                                                            <p class="text-muted small mb-0">No study materials available for this chapter.</p>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center">
+                <p class="text-muted fs-4">No study materials are available for your course at this time.</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

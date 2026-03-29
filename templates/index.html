@@ -1,0 +1,696 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>LeapNITPY - Empowering Future Leaders</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'img/leap_new.png' %}" />
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow sticky-top">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center fw-bold text-primary " href="{% url 'home' %}">
+          <img src="{% static 'img/leap_new.png' %}" alt="LeapNITPY Logo" height="50" class="me-2" />
+         <b>LeapNITPY</b>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+          aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto fw-semibold">
+            <li class="nav-item"><a class="nav-link active" href="{% url 'home' %}">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'team' %}">Team</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'entrance' %}">Entrance</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://www.nitpy.ac.in" target="_blank" rel="noopener">NITPY</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}">Contact</a></li>
+            {% if user.is_authenticated %}            <!--dashboard comes-->
+              <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
+            {% else %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'signup' %}">Sign In</a></li>
+              
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <!--annoucement-->
+  {% if announcements %}
+<div style="
+    background: linear-gradient(90deg, var(--bs-primary) 0%, #0a58ca 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    height: 50px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+   
+">
+
+  <!-- Fixed Title Section -->
+  <div style="
+      flex: 0 0 auto;
+      padding: 0 1rem;
+      font-weight: 700;
+      font-size: 1rem;
+      font-family: 'Poppins','Roboto',sans-serif;
+      color: #fff;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+  ">
+  Announcements
+  <svg width="1.2rem" height="1.2rem" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M34,6h-.6l-30,8.8A2,2,0,0,0,2,16.8v9a2.2,2.2,0,0,0,1.4,2l30,8.8H34a2,2,0,0,0,2-2V8A2,2,0,0,0,34,6ZM19.1,34.2,8.4,31l1.3,8.4A2.9,2.9,0,0,0,12.6,42h4.5a2.8,2.8,0,0,0,2.1-1,3.4,3.4,0,0,0,.8-2.6Z" fill="#fff"/>
+    <path d="M40,15.3a1.5,1.5,0,0,0,.9-.2l4-2a2,2,0,0,0-1.8-3.6l-4,2a2,2,0,0,0-.9,2.7A2.1,2.1,0,0,0,40,15.3Z" fill="#fff"/>
+    <path d="M44.9,29.6l-4-2a2.1,2.1,0,0,0-2.7.8,2,2,0,0,0,.9,2.7l4,2a1.5,1.5,0,0,0,.9.2,2.1,2.1,0,0,0,1.8-1.1A1.9,1.9,0,0,0,44.9,29.6Z" fill="#fff"/>
+    <path d="M40,23.3h4a2,2,0,0,0,0-4H40a2,2,0,0,0,0,4Z" fill="#fff"/>
+  </svg>
+</div>
+
+  <!-- Scrolling ticker section -->
+  <div style="
+      flex: 1 1 auto;
+      overflow: hidden;
+      position: relative;
+      mask-image: linear-gradient(to right, transparent 0, black 40px, black 80%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0, black 40px, black 80%, transparent 100%);
+  ">
+    <div id="ticker-content" style="
+        display: inline-block;
+        font-weight: 500;
+        font-size: 1.1rem;
+        font-family: 'Segoe UI', 'Roboto', sans-serif;
+        color: #fff;
+        white-space: nowrap;
+        padding-left: 1rem;
+    ">
+      {% for ann in announcements %}
+      {% if ann.pdf %}
+        <a href="{{ ann.pdf.url }}" style="text-decoration:none; color:inherit;" target="_blank">
+          <span style="margin: 0 3rem;">{{ ann.text }}</span>
+        </a>
+      {% else %}
+        <span style="margin: 0 3rem;">{{ ann.text }}</span>
+      {% endif %}
+    {% endfor %}
+    
+    </div>
+  </div>
+
+  <style>
+    @keyframes ticker-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-49.17%
+
+); }
+    }
+
+    #ticker-content {
+      display: inline-block;
+      animation: ticker-scroll 8s linear infinite;
+    }
+
+    #ticker-content:hover {
+      animation-play-state: paused;
+      cursor: pointer;
+    }
+  </style>
+
+  <script>
+    const ticker = document.getElementById('ticker-content');
+    const containerWidth = ticker.parentElement.offsetWidth;
+
+  
+    let originalHTML = ticker.innerHTML;
+    while(ticker.offsetWidth < containerWidth * 20) {
+      ticker.innerHTML += originalHTML;
+    }
+
+   //speed
+    const totalWidth = ticker.offsetWidth;
+    const speedFactor = 200;
+    const duration = totalWidth / speedFactor; 
+    ticker.style.animationDuration = duration + 's';
+  </script>
+
+</div>
+{% endif %}
+<section class="position-relative">
+  <!-- Carousel -->
+  <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="7000" aria-label="Photo Carousel">
+    <div class="carousel-inner">
+      {% for photo in photos %}
+        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+          <img src="{{ photo.image.url }}" 
+               class="d-block w-100 carousel-img" 
+               alt="{{ photo.title }}">
+          <div class="position-absolute top-0 start-0 w-100 h-100 overlay-gradient"></div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+      <div class="d-flex align-items-center justify-content-center rounded-circle border border-white control-btn">
+        <i class="fa-solid fa-angle-left text-white fs-3"></i>
+      </div>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+      <div class="d-flex align-items-center justify-content-center rounded-circle border border-white control-btn">
+        <i class="fa-solid fa-angle-right text-white fs-3"></i>
+      </div>
+    </button>
+
+    <!-- Desktop Stats overlay -->
+    <div class="position-absolute w-100 bottom-0 start-0 pb-4 px-2 d-flex flex-wrap text-white justify-content-between stats-container desktop-stats">
+      <div class="text-center stats-item">
+        <i class="fa-solid fa-user-graduate fa-2x mb-1"></i>
+        <h5 class="fw-bold mb-0">1000+</h5>
+        <p class="mb-0 fs-6 text-white-50">Students Trained</p>
+      </div>
+      <div class="text-center stats-item">
+        <i class="fa-solid fa-chalkboard-teacher fa-2x mb-1"></i>
+        <h5 class="fw-bold mb-0">200+</h5>
+        <p class="mb-0 fs-6 text-white-50">Previous Mentors</p>
+      </div>
+      <div class="text-center stats-item">
+        <i class="fa-solid fa-user-tie fa-2x mb-1"></i>
+        <h5 class="fw-bold mb-0">40+</h5>
+        <p class="mb-0 fs-6 text-white-50">Active Mentors</p>
+      </div>
+      <div class="text-center stats-item">
+        <i class="fa-solid fa-users fa-2x mb-1"></i>
+        <h5 class="fw-bold mb-0">500+</h5>
+        <p class="mb-0 fs-6 text-white-50">Active Test Participants</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Stats below carousel -->
+  <div class="mobile-stats d-none bg-dark py-3 px-2 d-flex flex-wrap justify-content-between text-white">
+    <div class="text-center stats-item">
+      <i class="fa-solid fa-user-graduate fa-2x mb-1 text-primary"></i>
+      <h5 class="fw-bold mb-0">1000+</h5>
+      <p class="mb-0 fs-6 text-white-50">Students Trained</p>
+    </div>
+    <div class="text-center stats-item">
+      <i class="fa-solid fa-chalkboard-teacher fa-2x mb-1 text-primary"></i>
+      <h5 class="fw-bold mb-0">200+</h5>
+      <p class="mb-0 fs-6 text-white-50">Previous Mentors</p>
+    </div>
+    <div class="text-center stats-item">
+      <i class="fa-solid fa-user-tie fa-2x mb-1 text-primary"></i>
+      <h5 class="fw-bold mb-0">40+</h5>
+      <p class="mb-0 fs-6 text-white-50">Active Mentors</p>
+    </div>
+    <div class="text-center stats-item">
+      <i class="fa-solid fa-users fa-2x mb-1 text-primary"></i>
+      <h5 class="fw-bold mb-0">500+</h5>
+      <p class="mb-0 fs-6 text-white-50">Active Test Participants</p>
+    </div>
+  </div>
+</section>
+
+<style>
+.carousel-img {
+  object-fit: cover;
+  object-position: center;
+  height: 80vh;
+}
+
+.overlay-gradient {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6));
+}
+
+.stats-item {
+  flex: 1 1 20%;
+  min-width: 120px;
+  margin: 0.2rem;
+}
+.stats-container {
+  gap: 0;
+}
+
+.control-btn {
+  width: 50px;
+  height: 50px;
+  transition: all 0.3s;
+  backdrop-filter: blur(4px);
+}
+.carousel-control-prev:hover .control-btn,
+.carousel-control-next:hover .control-btn {
+  background-color: rgba(255,255,255,0.2);
+  transform: scale(1.1);
+}
+
+.register-btn {
+  border: 2px solid #fff;
+  background-color: transparent;
+  color: #fff;
+  transition: all 0.3s;
+}
+.register-btn:hover {
+  background-color: rgba(255,255,255,0.2);
+  transform: translateY(-2px);
+}
+
+
+@media (max-width: 768px) {
+  .desktop-stats {
+    display: none !important;
+  }
+  .mobile-stats {
+    display: flex !important;
+    background-color: rgba(33, 37, 41, 0.30);
+  }
+  .carousel-img {
+    height: 40vh !important;
+  }
+  .control-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .register-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+  .stats-item {
+    flex: 1 1 48%;
+    margin: 0.1rem 1%;
+  }
+  .stats-container {
+  gap: 0; 
+}
+
+  #heroCarousel .carousel-item {
+    position: relative;
+  }
+  #heroCarousel .carousel-item::after {
+    content: "";
+    position: absolute;
+    bottom: -50px; 
+    left: 0;
+    width: 100%;
+    height: 100px; 
+    background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(33,37,41,1));
+    pointer-events: none;
+  }
+}
+</style>
+
+
+    <!-- About Section Expanded -->
+    <section class="py-5">
+      <div class="container">
+        
+    
+        
+    
+        <div class="container my-5">
+          <div class="row g-4 align-items-start">
+            
+            <!-- Left: LEAP paragraph -->
+            <div class="col-md-6">
+              <p class="fs-5" style="max-width: 800px; margin: 0 auto;">
+                The LEAP program is a beacon of excellence in our local community, driven by passionate 
+                students and mentors from NIT Puducherry. It empowers ambitious Class 10 and 11 students 
+                through rigorous training, regular screening tests, and personalized mentoring every weekend. 
+                Over 6 years, LEAP has consistently delivered outstanding academic results, producing numerous 
+                engineering and medical graduates who are now contributing to society.
+              </p>
+            </div>
+        
+            <!-- Right: Announcements block -->
+            <div class="col-md-6">
+              {% if announcements %}
+              <h5 class="mb-3 text-primary fw-bold ps-2">Announcements</h5>
+              <div class="announcement-box" id="announcement-box" aria-label="Announcements">
+                <div class="announcement-list" id="announcement-list">
+                  {% for ann in announcements %}
+                    {% if ann.pdf %}
+                      <a href="{{ ann.pdf.url }}" target="_blank" class="announcement-row" title="{{ ann.text }}">
+                        <span class="ann-text" title="{{ ann.text }}">{{ ann.text }}</span>
+                        {% if ann.is_new %}
+                          <span class="badge new-badge">NEW</span>
+                        {% endif %}
+                      </a>
+                    {% else %}
+                      <div class="announcement-row" title="{{ ann.text }}">
+                        <span class="ann-text" title="{{ ann.text }}">{{ ann.text }}</span>
+                        {% if ann.is_new %}
+                          <span class="badge new-badge">NEW</span>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            
+            <style>
+            .announcement-box{
+              max-height:260px;
+              overflow:hidden;
+              border-radius:16px;
+              background:linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,250,250,0.98));
+              box-shadow:0 6px 18px rgba(22,24,26,0.06);
+              padding:0.35rem;
+              position:relative;
+            }
+            .announcement-box:hover{
+              overflow-y:auto;
+            }
+            .announcement-box::-webkit-scrollbar{width:4px;}
+            .announcement-box::-webkit-scrollbar-track{background:transparent;}
+            .announcement-box::-webkit-scrollbar-thumb{
+              background:rgba(0,0,0,0.18);
+              border-radius:10px;
+              min-height:20px;
+            }
+            .announcement-box{scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.18) transparent;}
+            .announcement-list{
+              display:flex;
+              flex-direction:column;
+              position:relative;
+            }
+            .announcement-row{
+              display:flex;
+              gap:12px;
+              align-items:center;
+              justify-content:space-between;
+              padding:0.75rem 1rem;
+              border-radius:10px;
+              background:transparent;
+              color:#111827;
+              text-decoration:none;
+              border-bottom:1px solid rgba(0,0,0,0.04);
+              transition:background 0.6s ease,color 0.6s ease,box-shadow 0.6s ease, transform 1.5s ease-in-out;
+            }
+            .announcement-row:hover{
+              background:rgba(10,58,202,0.12);
+              color:var(--bs-primary);
+              cursor:pointer;
+            }
+            .ann-text{
+              display:block;
+              white-space:nowrap;
+              overflow:hidden;
+              text-overflow:ellipsis;
+              max-width:calc(100% - 64px);
+              font-size:0.96rem;
+            }
+            .new-badge{
+              background:linear-gradient(135deg,#ff3366,#ff6a00);
+              color:#fff;
+              font-size:0.66rem;
+              font-weight:700;
+              padding:0.22rem 0.5rem;
+              border-radius:999px;
+              box-shadow:0 6px 18px rgba(255,51,102,0.12);
+            }
+            .announcement-row:last-child{border-bottom:none;}
+            
+            @keyframes curvedBlueWipe {
+              0% { clip-path: circle(0% at 50% 50%); background: rgba(10,58,202,0.0);}
+              50% { clip-path: circle(75% at 50% 50%); background: rgba(10,58,202,0.0.7);}
+              100% { clip-path: circle(150% at 50% 50%); background: rgba(10,58,202,0.0);}
+            }
+            </style>
+            
+            <script>
+            (function(){
+              const box = document.getElementById('announcement-box');
+              const list = document.getElementById('announcement-list');
+              if(!box || !list) return;
+            
+              // Scrollbar only on hover
+              box.addEventListener('mouseenter',()=>box.style.overflowY='auto');
+              box.addEventListener('mouseleave',()=>box.style.overflowY='hidden');
+            
+              const rows = Array.from(list.children);
+              const rowHeight = rows[0].offsetHeight;
+              const visibleRows = Math.floor(box.clientHeight / rowHeight);
+              
+              // Only scroll if content overflows
+              if(rows.length <= visibleRows) return;
+            
+              let index = 0;
+            
+              function scrollStep(){
+                index++;
+                if(index > rows.length - visibleRows){
+                  // Reset to top with smooth curved blue wipe
+                  list.style.transition = 'transform 0.6s ease';
+                  list.style.transform = `translateY(0px)`;
+                  list.style.animation = 'curvedBlueWipe 1.8s ease';
+                  setTimeout(()=>{
+                    list.style.animation = '';
+                    index = 0;
+                    setTimeout(scrollStep, 2300);
+                  },1800);
+                  return;
+                }
+                list.style.transition = 'transform 1.5s ease-in-out';
+                list.style.transform = `translateY(-${rowHeight * index}px)`;
+                setTimeout(scrollStep, 2300);
+              }
+            
+              setTimeout(scrollStep, 2300);
+            })();
+            </script>
+            
+        
+          </div>
+        </div>
+        <hr class="my-5" />
+        <h2 class="text-center fw-bold mb-5">About LEAP</h2>
+    
+        <div class="row gy-4">
+          <div class="col-md-4 text-center">
+            <i class="fa-solid fa-bullseye fa-3x text-primary mb-3"></i>
+            <h4 class="fw-semibold mb-2">Our Mission</h4>
+            <p>To empower young minds of our local community with quality mentoring, skill-building, and academic excellence to unlock their full potential.</p>
+          </div>
+          <div class="col-md-4 text-center">
+            <i class="fa-solid fa-eye fa-3x text-primary mb-3"></i>
+            <h4 class="fw-semibold mb-2">Our Vision</h4>
+            <p>To be a leading youth mentorship program recognized for transforming students into confident, successful professionals and community leaders.</p>
+          </div>
+          <div class="col-md-4 text-center">
+            <i class="fa-solid fa-handshake fa-3x text-primary mb-3"></i>
+            <h4 class="fw-semibold mb-2">Our Values</h4>
+            <p>Integrity, dedication, community service, collaboration, and commitment to student success guide everything we do.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="py-5 bg-light">
+      <div class="container">
+        <h2 class="text-center fw-bold mb-5">Program Highlights & Benefits</h2>
+        <div class="row g-4 text-center">
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <i class="fa-solid fa-chalkboard fa-3x text-primary mb-3"></i>
+                <h5 class="card-title fw-semibold">Expert Mentoring</h5>
+                <p class="card-text">Experienced mentors provide personalized guidance and coaching to help students excel academically and personally.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <i class="fa-solid fa-tasks fa-3x text-primary mb-3"></i>
+                <h5 class="card-title fw-semibold">Regular Screening Tests</h5>
+                <p class="card-text">Frequent assessments help monitor progress, identify gaps, and maintain high standards throughout the preparation.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <i class="fa-solid fa-users fa-3x text-primary mb-3"></i>
+                <h5 class="card-title fw-semibold">Vibrant Community</h5>
+                <p class="card-text">A supportive learning environment fosters collaboration, motivation, and lifelong friendships among students and mentors.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Alumni Testimonials -->
+    <section class="py-5">
+      <div class="container">
+        <h2 class="text-center fw-bold mb-5">Alumni Success Stories</h2>
+        <div class="row g-4 justify-content-center">
+          <div class="col-md-6">
+            <blockquote class="blockquote border-start border-4 border-primary ps-4">
+              <p class="mb-3 fst-italic">
+                "Thanks to LEAP’s mentoring and regular tests, I secured my admission into a top engineering college. The guidance shaped my confidence and study habits."
+              </p>
+              <footer class="blockquote-footer">Amit, Engineering Graduate</footer>
+            </blockquote>
+          </div>
+          <div class="col-md-6">
+            <blockquote class="blockquote border-start border-4 border-primary ps-4">
+              <p class="mb-3 fst-italic">
+                "LEAP provided the right support and motivation throughout my preparation for medical entrance exams. I’m grateful for the mentors who guided me."
+              </p>
+              <footer class="blockquote-footer">Neha, Medical Graduate</footer>
+            </blockquote>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- How to Join -->
+    <section class="bg-light py-5">
+      <div class="container">
+        <h2 class="text-center fw-bold mb-5">How to Join LEAP</h2>
+    
+        <div class="row g-4">
+          <div class="col-md-4 text-center">
+            <i class="fa-solid fa-user-check fa-3x text-primary mb-3"></i>
+            <h5 class="fw-semibold mb-2">Eligibility</h5>
+            <p>Open to motivated Class 10 and 11 students from the local community aiming for engineering or medical careers.</p>
+          </div>
+          <div class="col-md-4 text-center">
+            <i class="fa-solid fa-calendar-check fa-3x text-primary mb-3"></i>
+            <h5 class="fw-semibold mb-2">Application Process</h5>
+            <p>Fill the registration form via the contact page and attend the screening test to qualify for the mentoring program.</p>
+          </div>
+          <div class="col-md-4 text-center">
+            <i class="fa-solid fa-users-gear fa-3x text-primary mb-3"></i>
+            <h5 class="fw-semibold mb-2">Program Duration</h5>
+            <p>The program runs year-round with weekend mentoring sessions and monthly screening tests to track progress.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- FAQ Section -->
+    <section class="py-5">
+      <div class="container">
+        <h2 class="text-center fw-bold mb-5">Frequently Asked Questions</h2>
+        <div class="accordion" id="faqAccordion">
+    
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="faqHeadingOne">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqOne" aria-expanded="true" aria-controls="faqOne">
+                Who can join the LEAP program?
+              </button>
+            </h2>
+            <div id="faqOne" class="accordion-collapse collapse show" aria-labelledby="faqHeadingOne" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">
+                Motivated students currently studying in Class 10 or 11 interested in engineering or medical fields can apply.
+              </div>
+            </div>
+          </div>
+    
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="faqHeadingTwo">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqTwo" aria-expanded="false" aria-controls="faqTwo">
+                How are mentors selected?
+              </button>
+            </h2>
+            <div id="faqTwo" class="accordion-collapse collapse" aria-labelledby="faqHeadingTwo" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">
+                Mentors are experienced NIT Puducherry students and alumni who demonstrate strong academic records and a passion for teaching.
+              </div>
+            </div>
+          </div>
+    
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="faqHeadingThree">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqThree" aria-expanded="false" aria-controls="faqThree">
+                What is the screening test format?
+              </button>
+            </h2>
+            <div id="faqThree" class="accordion-collapse collapse" aria-labelledby="faqHeadingThree" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">
+                Screening tests are monthly, designed to evaluate aptitude and subject knowledge in physics, chemistry, biology, and mathematics.
+              </div>
+            </div>
+          </div>
+    
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="faqHeadingFour">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqFour" aria-expanded="false" aria-controls="faqFour">
+                How can I register for the next session?
+              </button>
+            </h2>
+            <div id="faqFour" class="accordion-collapse collapse" aria-labelledby="faqHeadingFour" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">
+                Click the “Register for Next Year Entrance Test” button above or visit the contact page to fill out the registration form.
+              </div>
+            </div>
+          </div>
+    
+        </div>
+      </div>
+    </section>
+    
+    <!-- Final Call to Action -->
+    <section class="bg-primary text-white py-5">
+      <div class="container text-center">
+        <h2 class="fw-bold mb-3">Ready to take the leap towards your future?</h2>
+        <p class="fs-5 mb-4 mx-auto" style="max-width: 600px;">Join LEAP today and get personalized mentoring, comprehensive test prep, and a vibrant community supporting your goals.</p>
+        <a href="{% url 'contact' %}" class="btn btn-lg btn-light fw-bold px-5 shadow">Contact Us to Register</a>
+      </div>
+    </section>
+    
+    <!-- Footer (your existing code) -->
+    <footer class="bg-dark text-light py-4 mt-5">
+      <div class="container">
+        <div class="row gy-4">
+          <div class="col-12 col-md-6">
+            <h5 class="fw-bold mb-2">LEAP</h5>
+            <p class="text-light mb-0">LEAP NITPY<br>In accordance with National Service Scheme</p>
+          </div>
+    
+          <div class="col-6 col-md-3">
+            <h6 class="fw-bold">About</h6>
+            <ul class="list-unstyled">
+              <li><a href="https://nitpy.ac.in/" target="_blank" rel="noopener" class="text-light text-decoration-none">NIT Puducherry</a></li>
+              <li><a href="{% url 'team' %}" class="text-light text-decoration-none">Team</a></li>
+            </ul>
+          </div>
+    
+          <div class="col-6 col-md-3">
+            <h6 class="fw-bold">Opportunities</h6>
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-light text-decoration-none">Student openings</a></li>
+            </ul>
+          </div>
+        </div>
+    
+        <hr class="border-secondary" />
+    
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center small text-light">
+          <p class="mb-2 mb-md-0">© 2025 LEAP</p>
+          <a href="https://www.linkedin.com/in/gupta-ojas/" target="_blank" rel="noopener" class="text-light text-decoration-none">WebDev Credits - Ojas Gupta</a>
+        </div>
+      </div>
+    </footer>
+    
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+    
+</html>

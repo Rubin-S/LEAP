@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Study Concepts</h1>
+<div class="concepts">
+    {% for concept in concepts %}
+    <div class="card" style="margin-bottom:16px; padding:16px; border:1px solid #ccc;">
+        <h2>{{ concept.name }}</h2>
+        <a href="{% url 'study:concept_detail' concept.id %}">
+            <button>View Study Material</button>
+        </a>
+    </div>
+    {% empty %}
+    <p>No concepts available.</p>
+    {% endfor %}
+</div>
+{% endblock %}
