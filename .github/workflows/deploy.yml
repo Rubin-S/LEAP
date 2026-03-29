@@ -26,8 +26,9 @@ jobs:
 
       - name: Sync app to server
         run: |
-          rsync -avz --delete \
+          rsync -rtvz --delete \
             -e "ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.VPS_PORT }}" \
+            --omit-dir-times \
             --exclude '.git/' \
             --exclude '.github/' \
             --exclude '.venv/' \
@@ -43,8 +44,15 @@ jobs:
             --exclude 'media/' \
             --exclude 'boss/' \
             --exclude 'config/' \
+            --exclude 'server.log' \
+            --exclude 'nohup.out' \
+            --exclude 'gunicorn.sock' \
+            --exclude 'leapnitpy.org' \
+            --exclude 'ngrok' \
+            --exclude 'ngrok*' \
+            --exclude 'setup_leap_production.sh' \
             ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/myadmin/LEAP/
-
+            
       - name: Run remote deploy
         run: |
           ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash /home/myadmin/deploy_leap.sh"
