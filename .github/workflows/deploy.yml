@@ -1,0 +1,50 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync app to server
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.VPS_PORT }}" \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.venv/' \
+            --exclude 'myenv/' \
+            --exclude '__pycache__/' \
+            --exclude '*.pyc' \
+            --exclude '.env' \
+            --exclude '*.sqlite3' \
+            --exclude '*.log' \
+            --exclude 'backups_*' \
+            --exclude 'deploy_backups_*' \
+            --exclude 'staticfiles/' \
+            --exclude 'media/' \
+            --exclude 'boss/' \
+            --exclude 'config/' \
+            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/myadmin/LEAP/
+
+      - name: Run remote deploy
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash /home/myadmin/deploy_leap.sh"

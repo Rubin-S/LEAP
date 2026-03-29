@@ -140,3 +140,5 @@ GitHub.sublime-settings
 boss/
 config/
 staticfiles/
+
+setup_leap_production.sh
