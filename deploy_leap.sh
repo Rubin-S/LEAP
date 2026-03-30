@@ -58,6 +58,31 @@ for attempt in 1 2 3 4 5; do
   sleep 2
   if [ -S "$SOCKET_PATH" ]; then
     log "gunicorn socket created"
+    log "setting socket permissions for nginx"
+    chmod 666 "$SOCKET_PATH"
+    ls -l "$SOCKET_PATH"
+    log "verifying gunicorn over unix socket"
+    UNIX_STATUS="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --unix-socket "$SOCKET_PATH" http://localhost/)"
+    log "gunicorn unix-socket status: $UNIX_STATUS"
+    case "$UNIX_STATUS" in
+      200|301|302) ;;
+      *)
+        log "unexpected unix-socket status"
+        dump_debug
+        exit 1
+        ;;
+    esac
+    log "verifying nginx HTTPS upstream"
+    HTTPS_STATUS="$(curl --silent --show-error --insecure --output /dev/null --write-out '%{http_code}' -H "Host: leapnitpy.org" https://127.0.0.1/)"
+    log "nginx HTTPS status: $HTTPS_STATUS"
+    case "$HTTPS_STATUS" in
+      200|301|302) ;;
+      *)
+        log "unexpected nginx HTTPS status"
+        dump_debug
+        exit 1
+        ;;
+    esac
     pgrep -af "$GUNICORN_MATCH" || true
     exit 0
   fi
